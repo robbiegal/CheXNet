@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 """
-The main CheXNet model implementation.
+The main CheXNet model trainig implementation.
 """
 
 
@@ -23,7 +23,8 @@ CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
 TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list_factor_13.txt'
-BATCH_SIZE = 3
+TRAIN_IMAGE_LIST = './ChestX-ray14/labels/train_list.txt'
+BATCH_SIZE = 2
 
 LOADER_WORKERS=0
 def main():
@@ -46,8 +47,8 @@ def main():
     normalize = transforms.Normalize([0.485, 0.456, 0.406],
                                      [0.229, 0.224, 0.225])
 
-    test_dataset = ChestXrayDataSet(data_dir=DATA_DIR,
-                                    image_list_file=TEST_IMAGE_LIST,
+    train_dataset = ChestXrayDataSet(data_dir=DATA_DIR,
+                                    image_list_file=TRAIN_IMAGE_LIST,
                                     transform=transforms.Compose([
                                         transforms.Resize(256),
                                         transforms.TenCrop(224),
@@ -56,7 +57,7 @@ def main():
                                         transforms.Lambda
                                         (lambda crops: torch.stack([normalize(crop) for crop in crops]))
                                     ]))
-    test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE,
+    train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE,
                              shuffle=False, num_workers=LOADER_WORKERS, pin_memory=True)
 
     # initialize the ground truth and output tensor
@@ -65,11 +66,11 @@ def main():
     pred = torch.FloatTensor()
     pred = pred.cuda()
 
-    # switch to evaluate mode
-    model.eval()
+    # switch to train mode
+    model.train()
     print("starting loop")
     try:
-        for i, (inp, target) in enumerate(test_loader):
+        for i, (inp, target) in enumerate(train_loader):
             target = target.cuda()
             gt = torch.cat((gt, target), 0)
             bs, n_crops, c, h, w = inp.size()

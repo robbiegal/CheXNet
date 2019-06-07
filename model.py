@@ -23,7 +23,7 @@ CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
 TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list_factor_13.txt'
-BATCH_SIZE = 3
+BATCH_SIZE = 2
 
 LOADER_WORKERS=0
 def main():
@@ -81,7 +81,6 @@ def main():
                print("iteration "+str(i))
     except:
         print('error in iteration: '+str(i))
-        raise()
 
 
 
