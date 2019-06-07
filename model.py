@@ -22,10 +22,10 @@ N_CLASSES = 14
 CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
-TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list.txt'
-BATCH_SIZE = 64
+TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list_factor_13.txt'
+BATCH_SIZE = 3
 
-
+LOADER_WORKERS=0
 def main():
 
     cudnn.benchmark = True
@@ -34,7 +34,8 @@ def main():
     model = DenseNet121(N_CLASSES).cuda()
     model = torch.nn.DataParallel(model).cuda()
 
-    if os.path.isfile(CKPT_PATH):
+    #if os.path.isfile(CKPT_PATH):
+    if 0:
         print("=> loading checkpoint")
         checkpoint = torch.load(CKPT_PATH)
         model.load_state_dict(checkpoint['state_dict'])
@@ -56,7 +57,7 @@ def main():
                                         (lambda crops: torch.stack([normalize(crop) for crop in crops]))
                                     ]))
     test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE,
-                             shuffle=False, num_workers=8, pin_memory=True)
+                             shuffle=False, num_workers=LOADER_WORKERS, pin_memory=True)
 
     # initialize the ground truth and output tensor
     gt = torch.FloatTensor()
@@ -66,15 +67,23 @@ def main():
 
     # switch to evaluate mode
     model.eval()
+    print("starting loop")
+    try:
+        for i, (inp, target) in enumerate(test_loader):
+            target = target.cuda()
+            gt = torch.cat((gt, target), 0)
+            bs, n_crops, c, h, w = inp.size()
+            input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda(), volatile=True)
+            output = model(input_var)
+            output_mean = output.view(bs, n_crops, -1).mean(1)
+            pred = torch.cat((pred, output_mean.data), 0)
+            if not i%100:
+               print("iteration "+str(i))
+    except:
+        print('error in iteration: '+str(i))
+        raise()
 
-    for i, (inp, target) in enumerate(test_loader):
-        target = target.cuda()
-        gt = torch.cat((gt, target), 0)
-        bs, n_crops, c, h, w = inp.size()
-        input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda(), volatile=True)
-        output = model(input_var)
-        output_mean = output.view(bs, n_crops, -1).mean(1)
-        pred = torch.cat((pred, output_mean.data), 0)
+
 
     AUROCs = compute_AUCs(gt, pred)
     AUROC_avg = np.array(AUROCs).mean()
