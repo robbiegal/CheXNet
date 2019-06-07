@@ -15,6 +15,8 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from read_data import ChestXrayDataSet
 from sklearn.metrics import roc_auc_score
+import torch.optim as optim
+
 
 
 CKPT_PATH = 'model.pth.tar'
@@ -43,6 +45,12 @@ def main():
         print("=> loaded checkpoint")
     else:
         print("=> no checkpoint found")
+
+
+    #define loss and optimizer
+    criterion=nn.CrooEntropy
+    TOCOMTINUE!!!!!
+    
 
     normalize = transforms.Normalize([0.485, 0.456, 0.406],
                                      [0.229, 0.224, 0.225])
