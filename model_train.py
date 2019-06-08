@@ -89,12 +89,14 @@ def main():
                 label = label.cuda()
                 gt = torch.cat((gt, label), 0)
                 bs, n_crops, c, h, w = inp.size()
-                input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda(), volatile=True)
+                input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda())
                 #zero parameter gradients
                 optimiser.zero_grad()
                 #fw + back + optimise
                 output = model(input_var)
-                loss=criterion(output,label)
+                THE loss below NEEDS FIXING!! SEE crossEntropyLoss documentation
+
+                loss=criterion(output, label)
                 loss.backward()
                 optimiser.step()
                 #output_mean = output.view(bs, n_crops, -1).mean(1)
