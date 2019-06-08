@@ -29,6 +29,11 @@ TRAIN_IMAGE_LIST = './ChestX-ray14/labels/train_list.txt'
 BATCH_SIZE = 2
 
 LOADER_WORKERS=0
+
+LR=0.001
+MOMENTUM=0.9
+
+
 def main():
 
     cudnn.benchmark = True
@@ -48,8 +53,8 @@ def main():
 
 
     #define loss and optimizer
-    criterion=nn.CrooEntropy
-    TOCOMTINUE!!!!!
+    criterion=nn.CrossEntropyLoss()
+    optimiser=optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     
 
     normalize = transforms.Normalize([0.485, 0.456, 0.406],
@@ -74,20 +79,30 @@ def main():
     pred = torch.FloatTensor()
     pred = pred.cuda()
 
+    running_loss = 0.0
     # switch to train mode
     model.train()
     print("starting loop")
     try:
-        for i, (inp, target) in enumerate(train_loader):
-            target = target.cuda()
-            gt = torch.cat((gt, target), 0)
-            bs, n_crops, c, h, w = inp.size()
-            input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda(), volatile=True)
-            output = model(input_var)
-            output_mean = output.view(bs, n_crops, -1).mean(1)
-            pred = torch.cat((pred, output_mean.data), 0)
-            if not i%100:
-               print("iteration "+str(i))
+        for epoch in range(2):
+            for i, (inp, label) in enumerate(train_loader):
+                label = label.cuda()
+                gt = torch.cat((gt, label), 0)
+                bs, n_crops, c, h, w = inp.size()
+                input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda(), volatile=True)
+                #zero parameter gradients
+                optimiser.zero_grad()
+                #fw + back + optimise
+                output = model(input_var)
+                loss=criterion(output,label)
+                loss.backward()
+                optimiser.step()
+                #output_mean = output.view(bs, n_crops, -1).mean(1)
+                #pred = torch.cat((pred, output_mean.data), 0)
+                running_loss += loss.item()
+                #print statistics
+                if not i%100:
+                   print('[%d, %5d] loss=%.3f' %(epoch, i, running_loss))
     except:
         print('error in iteration: '+str(i))
         raise()
