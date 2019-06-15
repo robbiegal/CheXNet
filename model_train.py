@@ -93,9 +93,7 @@ def main():
                 #zero parameter gradients
                 optimiser.zero_grad()
                 #fw + back + optimise
-                output = model(input_var)
-                THE loss below NEEDS FIXING!! SEE crossEntropyLoss documentation
-
+                output = model(input_var)  #output dim should be: minibatch, classnum,
                 loss=criterion(output, label)
                 loss.backward()
                 optimiser.step()
@@ -108,35 +106,6 @@ def main():
     except:
         print('error in iteration: '+str(i))
         raise()
-
-
-
-    AUROCs = compute_AUCs(gt, pred)
-    AUROC_avg = np.array(AUROCs).mean()
-    print('The average AUROC is {AUROC_avg:.3f}'.format(AUROC_avg=AUROC_avg))
-    for i in range(N_CLASSES):
-        print('The AUROC of {} is {}'.format(CLASS_NAMES[i], AUROCs[i]))
-
-
-def compute_AUCs(gt, pred):
-    """Computes Area Under the Curve (AUC) from prediction scores.
-
-    Args:
-        gt: Pytorch tensor on GPU, shape = [n_samples, n_classes]
-          true binary labels.
-        pred: Pytorch tensor on GPU, shape = [n_samples, n_classes]
-          can either be probability estimates of the positive class,
-          confidence values, or binary decisions.
-
-    Returns:
-        List of AUROCs of all classes.
-    """
-    AUROCs = []
-    gt_np = gt.cpu().numpy()
-    pred_np = pred.cpu().numpy()
-    for i in range(N_CLASSES):
-        AUROCs.append(roc_auc_score(gt_np[:, i], pred_np[:, i]))
-    return AUROCs
 
 
 class DenseNet121(nn.Module):
