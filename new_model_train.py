@@ -16,17 +16,21 @@ from torch.utils.data import DataLoader
 from read_data import ChestXrayDataSet
 from sklearn.metrics import roc_auc_score
 import torch.optim as optim
+import pickle
 
 
 
 CKPT_PATH = 'model.pth.tar'
+TRAIN_VEC_FILE = 'train_vector.pkl'
+LOADED_VEC_FLAG=False
 N_CLASSES = 14
+N_EPOCHS = 3
 CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
 TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list_factor_13.txt'
 TRAIN_IMAGE_LIST = './ChestX-ray14/labels/train_list.txt'
-BATCH_SIZE = 2
+BATCH_SIZE = 4
 
 LOADER_WORKERS=0
 
@@ -80,9 +84,9 @@ def main():
     
     #### This is the orignal optimizer used in the paper. possibly  quicker convergence with Adam than with cross  entropy?.
     
-   #optimiser = optim.Adam (model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-5)
+    optimiser = optim.Adam (model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-5)
     
-    optimiser=optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
+    #optimiser=optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
     
 
     normalize = transforms.Normalize([0.485, 0.456, 0.406],
@@ -106,19 +110,26 @@ def main():
     gt = gt.cuda()
     pred = torch.FloatTensor()
     pred = pred.cuda()
-
-    running_loss = 0.0
+    if os.path.isfile(TRAIN_VEC_FILE):
+        train_vec=pickle.load(open(TRAIN_VEC_FILE,'rb'))
+        running_loss=train_vec[-1][3]
+        LOADED_VEC_FLAG=True
+        starting_epoch=train_vec[-1][1]+1
+    else:
+        starting_epoch = 0
+        running_loss = 0.0
+        train_vec=[]
     # switch to train mode
     model.train()
     print("starting loop")
     try:
-        for epoch in range(2):
+        for epoch in range(starting_epoch, N_EPOCHS):
             for i, (inp, label) in enumerate(train_loader):
                 label = label.cuda()
                 gt = torch.cat((gt, label), 0)
                 bs, n_crops, c, h, w = inp.size()
                 input_var = torch.autograd.Variable(inp.view(-1, c, h, w).cuda())
-
+                
                 #fw + back + optimise
                 output = model(input_var)  #output dim should be: minibatch, classnum...
                 output_mean=output.view(bs,n_crops,-1).mean(1)
@@ -131,11 +142,14 @@ def main():
                 optimiser.step()
                 #output_mean = output.view(bs, n_crops, -1).mean(1)
                 #pred = torch.cat((pred, output_mean.data), 0)
-                running_loss += loss.item()
+                loss=loss.item()
+                running_loss += loss 
                 #print statistics
                 if not i%100:
                    print('[%d, %5d] loss=%.3f' %(epoch, i, running_loss))
                    torch.save(model,CKPT_PATH)
+                   train_vec.append([epoch,i,loss,running_loss])
+                   pickle.dump(train_vec,open(TRAIN_VEC_FILE,'wb'))
     except:
         print('error in iteration: '+str(i))
         raise()
@@ -164,3 +178,4 @@ class DenseNet121(nn.Module):
 
 if __name__ == '__main__':
     main()
+
