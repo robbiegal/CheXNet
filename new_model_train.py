@@ -24,12 +24,13 @@ CKPT_PATH = 'model.pth.tar'
 TRAIN_VEC_FILE = 'train_vector.pkl'
 LOADED_VEC_FLAG=False
 N_CLASSES = 14
-N_EPOCHS = 3
+N_EPOCHS = 4
 CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
-TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list_factor_13.txt'
+TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list.txt'
 TRAIN_IMAGE_LIST = './ChestX-ray14/labels/train_list.txt'
+VALIDATION_IMAGE_LIST = './ChestX-ray14/labels/val_list.txt'
 BATCH_SIZE = 4
 
 LOADER_WORKERS=0
@@ -123,7 +124,7 @@ def main():
     model.train()
     print("starting loop")
     try:
-        for epoch in range(starting_epoch, N_EPOCHS):
+        for epoch in range(starting_epoch+1, N_EPOCHS):
             for i, (inp, label) in enumerate(train_loader):
                 label = label.cuda()
                 gt = torch.cat((gt, label), 0)

@@ -10,13 +10,14 @@ from read_data import ChestXrayDataSet
 from sklearn.metrics import roc_auc_score
 
 
-CKPT_PATH = 'model.pth.tar'
+CKPT_PATH = 'model_3epochs.pth.tar'
 N_CLASSES = 14
 CLASS_NAMES = [ 'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
                 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
 DATA_DIR = './ChestX-ray14/images'
 TEST_IMAGE_LIST = './ChestX-ray14/labels/test_list.txt'
-BATCH_SIZE = 2
+TRAIN_IMAGE_LIST = './ChestX-ray14/labels/train_list.txt'
+VALIDATION_IMAGE_LIST = './ChestX-ray14/labels/val_list.txt'
 
 
 def main():
